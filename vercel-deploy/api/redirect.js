@@ -64,8 +64,11 @@ export default async function handler(req, res) {
     const originalUrl = decodeShortcode(code);
     
     if (originalUrl) {
-      // Redirect đến URL gốc
-      return res.redirect(302, originalUrl);
+      // Redirect đến trang promo với URL gốc
+      const baseUrl = req.headers.host || 'localhost:3000';
+      const protocol = req.headers['x-forwarded-proto'] || 'https';
+      const promoUrl = `${protocol}://${baseUrl}/promo.html?url=${encodeURIComponent(originalUrl)}`;
+      return res.redirect(302, promoUrl);
     } else {
       // Không tìm thấy link
       return res.status(404).send(`

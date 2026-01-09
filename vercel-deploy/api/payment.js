@@ -1,4 +1,4 @@
-// Vercel Serverless Function
+// Vercel Serverless Function - Chỉ dùng API createToken
 export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -12,51 +12,18 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST' || req.method === 'GET') {
     try {
-      // Lấy parameters từ query (GET) hoặc body (POST)
-      const amount = req.query.amount || req.body?.amount || '10000';
-      const token = req.query.token || req.body?.token || '7f16ee6c-0c7c-4bfe-a498-56ff220565bd-d2ViXzg0MzkyNzQ2MTUy';
-      const phoneNumber = req.query.phoneNumber || req.body?.phoneNumber || '0392746152';
+      // Cấu hình mặc định
+      const DEFAULT_CONFIG = {
+        phoneNumber: '84346784490',
+        token: 'f4149290-a883-4c61-bf55-9566142ff665-d2ViXzg0MzQ2Nzg0NDkw'
+      };
       
-      // API Viettel omiPreOrder - Phải dùng POST
-      const apiUrl = `https://apigami.viettel.vn/mvt-api/myviettel.php/omiPreOrder`;
+      // Gọi API createToken
+      const createTokenUrl = `https://apigami.viettel.vn/mvt-api/myviettel.php/momo/createToken?lang=vi&pay_code=topup_web&token=${DEFAULT_CONFIG.token}&isdn=${DEFAULT_CONFIG.phoneNumber}`;
       
-      const params = new URLSearchParams({
-        amount: amount,
-        token: token,
-        ch: '',
-        createTokenId: 'false',
-        is_discount_tmdt: '1',
-        phoneNumber: phoneNumber,
-        service_code: 'topup_web',
-        type: '24',
-        pay_type: '24',
-        account: phoneNumber,
-        cust_info: JSON.stringify({
-          custName: '',
-          tin: '',
-          email: '',
-          address: '',
-          company: '',
-          codeRelationship: ''
-        }),
-        invoice_request: '',
-        voucherList: '',
-        service_type: '1',
-        hot_charge: '0',
-        source: 'WEBPORTAL',
-        paymentType: '5'
-      });
-      
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json'
-        },
-        body: params.toString()
-      });
-      
+      const response = await fetch(createTokenUrl);
       const data = await response.json();
+      
       return res.status(200).json(data);
       
     } catch (error) {
