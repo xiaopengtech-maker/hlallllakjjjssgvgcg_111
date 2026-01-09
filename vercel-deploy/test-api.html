@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Response</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4ec9b0;
+        }
+        button {
+            padding: 10px 20px;
+            background: #0e639c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background: #1177bb;
+        }
+        pre {
+            background: #252526;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #3e3e42;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .label {
+            color: #4ec9b0;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .error {
+            color: #f48771;
+        }
+        .success {
+            color: #4ec9b0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test API Viettel</h1>
+        
+        <button onclick="testDirectAPI()">Test Direct API (Viettel)</button>
+        <button onclick="testProxyAPI()">Test Proxy API (Vercel)</button>
+        <button onclick="clearResults()">Clear</button>
+
+        <div class="section">
+            <div class="label">📡 Direct API Response (Viettel):</div>
+            <pre id="directResponse">Chưa test...</pre>
+        </div>
+
+        <div class="section">
+            <div class="label">🔄 Proxy API Response (Vercel):</div>
+            <pre id="proxyResponse">Chưa test...</pre>
+        </div>
+
+        <div class="section">
+            <div class="label">📊 Analysis:</div>
+            <pre id="analysis">Chưa có dữ liệu...</pre>
+        </div>
+    </div>
+
+    <script>
+        async function testDirectAPI() {
+            const directEl = document.getElementById('directResponse');
+            directEl.textContent = 'Đang gọi API...';
+            
+            try {
+                const url = 'https://apigami.viettel.vn/mvt-api/myviettel.php/omiPreOrder?amount=10000&token=7f16ee6c-0c7c-4bfe-a498-56ff220565bd-d2ViXzg0MzkyNzQ2MTUy&ch=&createTokenId=false&is_discount_tmdt=1&phoneNumber=0392746152&service_code=topup_web&type=24&pay_type=24&account=0392746152&cust_info=%7B%22custName%22:%22%22,%22tin%22:%22%22,%22email%22:%22%22,%22address%22:%22%22,%22company%22:%22%22,%22codeRelationship%22:%22%22%7D&invoice_request=&voucherList=&service_type=1&hot_charge=0&source=WEBPORTAL&paymentType=5';
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                directEl.innerHTML = `<span class="success">✅ Success!</span>\n\n${JSON.stringify(data, null, 2)}`;
+                analyzeResponse(data, 'direct');
+            } catch (error) {
+                directEl.innerHTML = `<span class="error">❌ Error: ${error.message}</span>\n\n${error.stack}`;
+            }
+        }
+
+        async function testProxyAPI() {
+            const proxyEl = document.getElementById('proxyResponse');
+            proxyEl.textContent = 'Đang gọi API...';
+            
+            try {
+                const response = await fetch('/api/payment?amount=10000');
+                const data = await response.json();
+                
+                proxyEl.innerHTML = `<span class="success">✅ Success!</span>\n\n${JSON.stringify(data, null, 2)}`;
+                analyzeResponse(data, 'proxy');
+            } catch (error) {
+                proxyEl.innerHTML = `<span class="error">❌ Error: ${error.message}</span>\n\n${error.stack}`;
+            }
+        }
+
+        function analyzeResponse(data, source) {
+            const analysisEl = document.getElementById('analysis');
+            let analysis = `📊 Analysis for ${source}:\n\n`;
+            
+            analysis += `errorCode: ${data.errorCode}\n`;
+            analysis += `message: ${data.message}\n\n`;
+            
+            if (data.data) {
+                analysis += `✅ data object exists\n`;
+                analysis += `  - urlProcess: ${data.data.urlProcess ? '✅ Found' : '❌ Missing'}\n`;
+                analysis += `  - deeplink: ${data.data.deeplink ? '✅ Found' : '❌ Missing'}\n`;
+                analysis += `  - transaction_id: ${data.data.transaction_id || 'N/A'}\n`;
+                
+                if (data.data.urlProcess) {
+                    analysis += `\n🔗 Payment URL:\n${data.data.urlProcess}\n`;
+                }
+                if (data.data.deeplink) {
+                    analysis += `\n📱 Deeplink:\n${data.data.deeplink}\n`;
+                }
+            } else {
+                analysis += `❌ data object missing\n`;
+                analysis += `\nFull response keys: ${Object.keys(data).join(', ')}\n`;
+            }
+            
+            analysisEl.textContent = analysis;
+        }
+
+        function clearResults() {
+            document.getElementById('directResponse').textContent = 'Chưa test...';
+            document.getElementById('proxyResponse').textContent = 'Chưa test...';
+            document.getElementById('analysis').textContent = 'Chưa có dữ liệu...';
+        }
+    </script>
+</body>
+</html>
