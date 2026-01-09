@@ -15,7 +15,7 @@ export default async function handler(req, res) {
       // Cấu hình mặc định
       const DEFAULT_CONFIG = {
         phoneNumber: '84346784490',
-        token: 'f4149290-a883-4c61-bf55-9566142ff665-d2ViXzg0MzQ2Nzg0NDkw'
+        token: '579fb011-f2e5-42e0-bcc3-9dedaf6d599e-d2ViXzg0MzQ2Nzg0NDkw'
       };
       
       // Gọi API createToken
