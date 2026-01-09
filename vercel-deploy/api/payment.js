@@ -17,14 +17,43 @@ export default async function handler(req, res) {
       const token = req.query.token || req.body?.token || '7f16ee6c-0c7c-4bfe-a498-56ff220565bd-d2ViXzg0MzkyNzQ2MTUy';
       const phoneNumber = req.query.phoneNumber || req.body?.phoneNumber || '0392746152';
       
-      // API Viettel omiPreOrder
-      const apiUrl = `https://apigami.viettel.vn/mvt-api/myviettel.php/omiPreOrder?amount=${amount}&token=${token}&ch=&createTokenId=false&is_discount_tmdt=1&phoneNumber=${phoneNumber}&service_code=topup_web&type=24&pay_type=24&account=${phoneNumber}&cust_info=%7B%22custName%22:%22%22,%22tin%22:%22%22,%22email%22:%22%22,%22address%22:%22%22,%22company%22:%22%22,%22codeRelationship%22:%22%22%7D&invoice_request=&voucherList=&service_type=1&hot_charge=0&source=WEBPORTAL&paymentType=5`;
+      // API Viettel omiPreOrder - Phải dùng POST
+      const apiUrl = `https://apigami.viettel.vn/mvt-api/myviettel.php/omiPreOrder`;
+      
+      const params = new URLSearchParams({
+        amount: amount,
+        token: token,
+        ch: '',
+        createTokenId: 'false',
+        is_discount_tmdt: '1',
+        phoneNumber: phoneNumber,
+        service_code: 'topup_web',
+        type: '24',
+        pay_type: '24',
+        account: phoneNumber,
+        cust_info: JSON.stringify({
+          custName: '',
+          tin: '',
+          email: '',
+          address: '',
+          company: '',
+          codeRelationship: ''
+        }),
+        invoice_request: '',
+        voucherList: '',
+        service_type: '1',
+        hot_charge: '0',
+        source: 'WEBPORTAL',
+        paymentType: '5'
+      });
       
       const response = await fetch(apiUrl, {
-        method: 'GET',
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json'
-        }
+        },
+        body: params.toString()
       });
       
       const data = await response.json();
