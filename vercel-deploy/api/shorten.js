@@ -5,14 +5,13 @@
 function encodeUrl(url) {
   // Encode URL thành base64
   const base64 = Buffer.from(url).toString('base64');
-  // Làm URL-safe và rút ngắn
+  // Làm URL-safe (không cắt ngắn để giữ nguyên dữ liệu)
   const urlSafe = base64
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '');
   
-  // Lấy 8 ký tự đầu làm shortcode
-  return urlSafe.substring(0, 8);
+  return urlSafe;
 }
 
 // Decode shortcode thành URL
