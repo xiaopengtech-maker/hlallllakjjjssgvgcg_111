@@ -1,5 +1,24 @@
 // API để redirect link rút gọn
-const linkStore = new Map();
+// Decode shortcode thành URL gốc
+
+function decodeShortcode(shortcode) {
+  try {
+    // Restore base64 format
+    let base64 = shortcode
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    
+    // Add padding if needed
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    
+    // Decode
+    return Buffer.from(base64, 'base64').toString('utf-8');
+  } catch (error) {
+    return null;
+  }
+}
 
 export default async function handler(req, res) {
   const { code } = req.query;
@@ -42,7 +61,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const originalUrl = linkStore.get(code);
+    const originalUrl = decodeShortcode(code);
     
     if (originalUrl) {
       // Redirect đến URL gốc

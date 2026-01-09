@@ -1,23 +1,38 @@
 // Vercel Serverless Function - Rút gọn link
-// Sử dụng Vercel KV hoặc in-memory storage đơn giản
+// Sử dụng Base64 encoding để encode URL trong shortcode
 
-// In-memory storage (đơn giản, mất data khi restart)
-// Để persistent, cần dùng Vercel KV hoặc database
-const linkStore = new Map();
-
-// Tạo mã ngắn từ URL
-function generateShortCode(url) {
-  // Tạo hash đơn giản từ URL
-  let hash = 0;
-  for (let i = 0; i < url.length; i++) {
-    const char = url.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
+// Encode URL thành shortcode
+function encodeUrl(url) {
+  // Encode URL thành base64
+  const base64 = Buffer.from(url).toString('base64');
+  // Làm URL-safe và rút ngắn
+  const urlSafe = base64
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
   
-  // Chuyển thành base36 và lấy 6 ký tự
-  const shortCode = Math.abs(hash).toString(36).substring(0, 6);
-  return shortCode;
+  // Lấy 8 ký tự đầu làm shortcode
+  return urlSafe.substring(0, 8);
+}
+
+// Decode shortcode thành URL
+function decodeShortcode(shortcode) {
+  try {
+    // Restore base64 format
+    let base64 = shortcode
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    
+    // Add padding if needed
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    
+    // Decode
+    return Buffer.from(base64, 'base64').toString('utf-8');
+  } catch (error) {
+    return null;
+  }
 }
 
 export default async function handler(req, res) {
@@ -41,11 +56,8 @@ export default async function handler(req, res) {
         });
       }
 
-      // Tạo mã ngắn
-      const shortCode = generateShortCode(url);
-      
-      // Lưu vào store
-      linkStore.set(shortCode, url);
+      // Encode URL thành shortcode
+      const shortCode = encodeUrl(url);
       
       // Trả về link rút gọn
       const baseUrl = req.headers.host || 'localhost:3000';
@@ -65,7 +77,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // GET: Redirect từ link rút gọn
+  // GET: Lấy thông tin link
   if (req.method === 'GET') {
     try {
       const { code } = req.query;
@@ -76,11 +88,11 @@ export default async function handler(req, res) {
         });
       }
 
-      const originalUrl = linkStore.get(code);
+      const originalUrl = decodeShortcode(code);
       
       if (!originalUrl) {
         return res.status(404).json({
-          error: 'Link not found'
+          error: 'Invalid short code'
         });
       }
 
