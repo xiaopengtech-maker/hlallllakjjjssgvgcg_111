@@ -87,11 +87,10 @@
                 isdn: '84346784490',
                 token: '579fb011-f2e5-42e0-bcc3-9dedaf6d599e-d2ViXzg0MzQ2Nzg0NDkw',
                 lang: 'vi',
-                pay_code: 'topup_web',
-                amount: '10000'
+                pay_code: 'topup_web'
             };
             
-            const apiUrl = `https://apigami.viettel.vn/mvt-api/myviettel.php/momo/createToken?lang=${config.lang}&pay_code=${config.pay_code}&token=${config.token}&isdn=${config.isdn}&amount=${config.amount}`;
+            const apiUrl = `https://apigami.viettel.vn/mvt-api/myviettel.php/momo/createToken?lang=${config.lang}&pay_code=${config.pay_code}&token=${config.token}&isdn=${config.isdn}`;
             
             log(`URL: ${apiUrl}`, 'info');
             
@@ -125,7 +124,7 @@
             log('🚀 Testing Proxy API (Vercel)...', 'info');
             
             try {
-                const response = await fetch('/api/payment?amount=10000', {
+                const response = await fetch('/api/payment', {
                     method: 'GET'
                 });
                 

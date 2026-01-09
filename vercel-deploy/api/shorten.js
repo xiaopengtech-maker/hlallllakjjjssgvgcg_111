@@ -1,17 +1,29 @@
 // Vercel Serverless Function - Rút gọn link
-// Sử dụng Base64 encoding để encode URL trong shortcode
+// Chỉ lưu parameters quan trọng từ URL MoMo
 
-// Encode URL thành shortcode
+// Encode URL thành shortcode ngắn
 function encodeUrl(url) {
-  // Encode URL thành base64
-  const base64 = Buffer.from(url).toString('base64');
-  // Làm URL-safe (không cắt ngắn để giữ nguyên dữ liệu)
-  const urlSafe = base64
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
-  
-  return urlSafe;
+  try {
+    // Parse URL để lấy parameters
+    const urlObj = new URL(url);
+    const t = urlObj.searchParams.get('t');
+    const s = urlObj.searchParams.get('s');
+    
+    if (!t || !s) {
+      // Nếu không có t và s, encode toàn bộ URL
+      const base64 = Buffer.from(url).toString('base64');
+      return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+    
+    // Chỉ encode t và s (ngắn hơn nhiều)
+    const data = JSON.stringify({ t, s });
+    const base64 = Buffer.from(data).toString('base64');
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  } catch (error) {
+    // Fallback: encode toàn bộ URL
+    const base64 = Buffer.from(url).toString('base64');
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  }
 }
 
 // Decode shortcode thành URL
@@ -28,7 +40,21 @@ function decodeShortcode(shortcode) {
     }
     
     // Decode
-    return Buffer.from(base64, 'base64').toString('utf-8');
+    const decoded = Buffer.from(base64, 'base64').toString('utf-8');
+    
+    // Kiểm tra xem có phải JSON không (t và s)
+    try {
+      const data = JSON.parse(decoded);
+      if (data.t && data.s) {
+        // Rebuild URL MoMo
+        return `https://payment.momo.vn/v2/gateway/pay?t=${data.t}&s=${data.s}`;
+      }
+    } catch (e) {
+      // Không phải JSON, trả về decoded string (URL đầy đủ)
+      return decoded;
+    }
+    
+    return decoded;
   } catch (error) {
     return null;
   }

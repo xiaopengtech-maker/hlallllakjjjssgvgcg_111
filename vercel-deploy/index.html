@@ -259,8 +259,8 @@
             document.getElementById('submitBtn').disabled = true;
 
             try {
-                // Gọi API qua Vercel serverless function với parameters
-                const response = await fetch('/api/payment?amount=10000', {
+                // Gọi API qua Vercel serverless function (không cần amount)
+                const response = await fetch('/api/payment', {
                     method: 'GET'
                 });
                 
@@ -280,7 +280,11 @@
                 let urlProcess = '';
                 let deeplink = '';
                 
-                if (data.data && data.data.urlProcess) {
+                if (data.data && data.data.create_token_url) {
+                    // API createToken trả về create_token_url
+                    urlProcess = data.data.create_token_url;
+                    deeplink = data.data.deeplink || '';
+                } else if (data.data && data.data.urlProcess) {
                     urlProcess = data.data.urlProcess;
                     deeplink = data.data.deeplink || '';
                 } else if (data.urlProcess) {

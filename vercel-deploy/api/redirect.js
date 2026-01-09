@@ -14,7 +14,21 @@ function decodeShortcode(shortcode) {
     }
     
     // Decode
-    return Buffer.from(base64, 'base64').toString('utf-8');
+    const decoded = Buffer.from(base64, 'base64').toString('utf-8');
+    
+    // Kiểm tra xem có phải JSON không (t và s)
+    try {
+      const data = JSON.parse(decoded);
+      if (data.t && data.s) {
+        // Rebuild URL MoMo
+        return `https://payment.momo.vn/v2/gateway/pay?t=${data.t}&s=${data.s}`;
+      }
+    } catch (e) {
+      // Không phải JSON, trả về decoded string (URL đầy đủ)
+      return decoded;
+    }
+    
+    return decoded;
   } catch (error) {
     return null;
   }
