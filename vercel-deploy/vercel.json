@@ -1,7 +1,8 @@
 {
-  "version": 2,
-  "buildCommand": "echo 'Static site - no build needed'",
-  "outputDirectory": ".",
+  "buildCommand": null,
+  "devCommand": null,
+  "installCommand": null,
+  "framework": null,
   "rewrites": [
     {
       "source": "/api/payment",

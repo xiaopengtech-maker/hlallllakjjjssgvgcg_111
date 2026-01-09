@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Tạo link thanh toán MoMo từ Viettel API",
   "main": "index.html",
-  "scripts": {
-    "dev": "vercel dev"
-  },
   "keywords": [
     "viettel",
     "momo",
