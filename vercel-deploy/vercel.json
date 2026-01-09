@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/payment",
+      "destination": "/api/payment.js"
+    },
+    {
+      "source": "/api/shorten",
+      "destination": "/api/shorten.js"
+    },
+    {
+      "source": "/s/:code",
+      "destination": "/api/redirect.js"
+    }
+  ]
+}

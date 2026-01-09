@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo Link Thanh Toán MoMo - Viettel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-title {
+            color: #28a745;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-title::before {
+            content: "✓";
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: #28a745;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+        }
+
+        .link-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .link-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .link-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .link-url {
+            flex: 1;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 13px;
+            word-break: break-all;
+            color: #495057;
+        }
+
+        .copy-btn {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+        }
+
+        .copy-btn.copied {
+            background: #6c757d;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #f5c6cb;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Tạo Link Thanh Toán MoMo</h1>
+        
+        <button class="btn" id="submitBtn" onclick="createPaymentLink()">
+            Tạo Link Thanh Toán
+        </button>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px; color: #666;">Đang xử lý...</p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="result-section" id="resultSection">
+            <div class="result-title">Link thanh toán đã được tạo thành công!</div>
+            
+            <div class="link-item">
+                <div class="link-label">🔗 Link thanh toán MoMo (Rút gọn):</div>
+                <div class="link-container">
+                    <div class="link-url" id="shortUrlDisplay"></div>
+                    <button class="copy-btn" onclick="copyToClipboard('shortUrl')">Copy</button>
+                </div>
+            </div>
+
+            <div class="link-item">
+                <div class="link-label">🌐 Link thanh toán gốc:</div>
+                <div class="link-container">
+                    <div class="link-url" id="originalUrlDisplay"></div>
+                    <button class="copy-btn" onclick="copyToClipboard('originalUrl')">Copy</button>
+                </div>
+            </div>
+
+            <div class="link-item">
+                <div class="link-label">📱 Deeplink MoMo App:</div>
+                <div class="link-container">
+                    <div class="link-url" id="deeplinkDisplay"></div>
+                    <button class="copy-btn" onclick="copyToClipboard('deeplink')">Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLinks = {
+            shortUrl: '',
+            originalUrl: '',
+            deeplink: ''
+        };
+
+        async function createPaymentLink() {
+            document.getElementById('resultSection').classList.remove('show');
+            document.getElementById('errorMessage').classList.remove('show');
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('submitBtn').disabled = true;
+
+            try {
+                // Gọi API qua Vercel serverless function
+                const response = await fetch('/api/payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+
+                if (data.errorCode && data.errorCode !== 0) {
+                    throw new Error(data.message || 'Có lỗi xảy ra');
+                }
+
+                console.log('API Response:', data);
+
+                // Lấy URL từ response
+                let urlProcess = '';
+                let deeplink = '';
+                
+                if (data.data && data.data.urlProcess) {
+                    urlProcess = data.data.urlProcess;
+                    deeplink = data.data.deeplink || '';
+                } else if (data.urlProcess) {
+                    urlProcess = data.urlProcess;
+                    deeplink = data.deeplink || '';
+                } else if (data.url) {
+                    urlProcess = data.url;
+                    deeplink = data.deeplink || '';
+                } else {
+                    console.error('Response structure:', data);
+                    throw new Error('API không trả về link thanh toán');
+                }
+
+                // Rút gọn URL
+                const shortUrl = await shortenUrl(urlProcess);
+
+                currentLinks = {
+                    shortUrl: shortUrl,
+                    originalUrl: urlProcess,
+                    deeplink: deeplink
+                };
+
+                document.getElementById('shortUrlDisplay').textContent = shortUrl;
+                document.getElementById('originalUrlDisplay').textContent = urlProcess;
+                document.getElementById('deeplinkDisplay').textContent = deeplink || 'Không có';
+                
+                document.getElementById('resultSection').classList.add('show');
+
+            } catch (error) {
+                showError('Lỗi: ' + error.message);
+                console.error('Full error:', error);
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('submitBtn').disabled = false;
+            }
+        }
+
+        async function shortenUrl(longUrl) {
+            try {
+                // Sử dụng API rút gọn link riêng
+                const response = await fetch('/api/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: longUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.shortUrl) {
+                    return data.shortUrl;
+                } else {
+                    return longUrl;
+                }
+            } catch (error) {
+                console.error('Error shortening URL:', error);
+                return longUrl;
+            }
+        }
+
+        function copyToClipboard(linkType) {
+            const textToCopy = currentLinks[linkType];
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                document.execCommand('copy');
+                
+                const buttons = document.querySelectorAll('.copy-btn');
+                buttons.forEach(btn => {
+                    if (btn.textContent === 'Copy' && btn.onclick.toString().includes(linkType)) {
+                        btn.textContent = 'Đã copy!';
+                        btn.classList.add('copied');
+                        setTimeout(() => {
+                            btn.textContent = 'Copy';
+                            btn.classList.remove('copied');
+                        }, 2000);
+                    }
+                });
+            } catch (err) {
+                showError('Không thể copy. Vui lòng copy thủ công.');
+            }
+            
+            document.body.removeChild(textarea);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            
+            setTimeout(() => {
+                errorDiv.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

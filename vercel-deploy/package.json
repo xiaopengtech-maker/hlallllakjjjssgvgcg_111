@@ -1,0 +1,17 @@
+{
+  "name": "viettel-momo-payment",
+  "version": "1.0.0",
+  "description": "Tạo link thanh toán MoMo từ Viettel API",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build needed'"
+  },
+  "keywords": [
+    "viettel",
+    "momo",
+    "payment"
+  ],
+  "author": "",
+  "license": "MIT"
+}
