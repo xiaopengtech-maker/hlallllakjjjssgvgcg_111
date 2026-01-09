@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .error { color: #dc3545; }
+        .success { color: #28a745; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>🧪 Simple API Test</h1>
+        <button onclick="testAPI()">Test Vercel Proxy API</button>
+    </div>
+
+    <div class="box">
+        <h3>Response:</h3>
+        <pre id="response">Click button to test...</pre>
+    </div>
+
+    <div class="box">
+        <h3>Details:</h3>
+        <pre id="details">Waiting...</pre>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const responseEl = document.getElementById('response');
+            const detailsEl = document.getElementById('details');
+            
+            responseEl.innerHTML = '<span class="info">⏳ Calling API...</span>';
+            detailsEl.innerHTML = '<span class="info">⏳ Processing...</span>';
+            
+            try {
+                console.log('Calling /api/payment?amount=10000');
+                
+                const startTime = Date.now();
+                const response = await fetch('/api/payment?amount=10000', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                const endTime = Date.now();
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                // Display response
+                responseEl.innerHTML = `<span class="success">✅ Status: ${response.status}</span>\n\n${JSON.stringify(data, null, 2)}`;
+                
+                // Display details
+                let details = `⏱️ Time: ${endTime - startTime}ms\n`;
+                details += `📊 Status: ${response.status} ${response.statusText}\n\n`;
+                
+                if (data.errorCode !== undefined) {
+                    details += `errorCode: ${data.errorCode}\n`;
+                    details += `message: ${data.message || 'N/A'}\n\n`;
+                }
+                
+                if (data.data) {
+                    details += `✅ data object exists\n`;
+                    details += `Keys: ${Object.keys(data.data).join(', ')}\n\n`;
+                    
+                    if (data.data.urlProcess) {
+                        details += `✅ urlProcess found:\n${data.data.urlProcess}\n\n`;
+                    } else {
+                        details += `❌ urlProcess NOT found\n\n`;
+                    }
+                    
+                    if (data.data.deeplink) {
+                        details += `✅ deeplink found:\n${data.data.deeplink}\n\n`;
+                    } else {
+                        details += `❌ deeplink NOT found\n\n`;
+                    }
+                } else {
+                    details += `❌ data object NOT found\n`;
+                    details += `Available keys: ${Object.keys(data).join(', ')}\n`;
+                }
+                
+                detailsEl.textContent = details;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                responseEl.innerHTML = `<span class="error">❌ Error: ${error.message}</span>\n\n${error.stack}`;
+                detailsEl.innerHTML = `<span class="error">❌ Failed to call API</span>\n\nError: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
