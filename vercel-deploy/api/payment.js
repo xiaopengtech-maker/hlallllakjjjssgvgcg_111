@@ -12,6 +12,9 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST' || req.method === 'GET') {
     try {
+      // Lấy amount từ query params hoặc dùng mặc định
+      const amount = req.query.amount || '10000';
+      
       // Cấu hình mặc định
       const DEFAULT_CONFIG = {
         isdn: '84346784490',
@@ -20,15 +23,16 @@ export default async function handler(req, res) {
         pay_code: 'topup_web'
       };
       
-      // POST vào API createToken
-      const apiUrl = `https://apigami.viettel.vn/mvt-api/myviettel.php/momo/createToken?lang=${DEFAULT_CONFIG.lang}&pay_code=${DEFAULT_CONFIG.pay_code}&token=${DEFAULT_CONFIG.token}&isdn=${DEFAULT_CONFIG.isdn}`;
+      // POST vào API createToken với amount
+      const apiUrl = `https://apigami.viettel.vn/mvt-api/myviettel.php/momo/createToken?lang=${DEFAULT_CONFIG.lang}&pay_code=${DEFAULT_CONFIG.pay_code}&token=${DEFAULT_CONFIG.token}&isdn=${DEFAULT_CONFIG.isdn}&amount=${amount}`;
       
       console.log('Calling createToken API:', apiUrl);
       
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         }
       });
       
