@@ -259,21 +259,22 @@
             document.getElementById('submitBtn').disabled = true;
 
             try {
-                // Gọi API qua Vercel serverless function
-                const response = await fetch('/api/payment', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                // Gọi API qua Vercel serverless function với parameters
+                const response = await fetch('/api/payment?amount=10000', {
+                    method: 'GET'
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
                 const data = await response.json();
 
-                if (data.errorCode && data.errorCode !== 0) {
-                    throw new Error(data.message || 'Có lỗi xảy ra');
-                }
-
                 console.log('API Response:', data);
+
+                if (data.errorCode && data.errorCode !== 0) {
+                    throw new Error(data.message || 'Có lỗi xảy ra khi tạo link thanh toán');
+                }
 
                 // Lấy URL từ response
                 let urlProcess = '';
@@ -290,7 +291,7 @@
                     deeplink = data.deeplink || '';
                 } else {
                     console.error('Response structure:', data);
-                    throw new Error('API không trả về link thanh toán');
+                    throw new Error('API không trả về link thanh toán. Kiểm tra console để xem chi tiết.');
                 }
 
                 // Rút gọn URL
