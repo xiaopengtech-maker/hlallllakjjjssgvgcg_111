@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tạo Link Thanh Toán MoMo - Viettel</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -17,375 +13,554 @@
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            padding: 20px;
+            align-items: flex-start;
+            padding: 30px 20px;
         }
 
         .container {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             max-width: 600px;
             width: 100%;
-            padding: 40px;
+            overflow: hidden;
         }
 
-        h1 {
+        /* ===== TABS ===== */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 16px 10px;
+            border: none;
+            background: #fafafa;
+            font-size: 14px;
+            font-weight: 600;
+            color: #888;
+            cursor: pointer;
+            transition: all .2s;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        .tab-btn:hover:not(.active) { background: #f0f0f0; color: #555; }
+
+        .tab-content { display: none; padding: 32px; }
+        .tab-content.active { display: block; }
+
+        /* ===== CHUNG ===== */
+        h2 {
             color: #333;
             text-align: center;
-            margin-bottom: 30px;
-            font-size: 28px;
+            margin-bottom: 24px;
+            font-size: 22px;
         }
 
         .btn {
             width: 100%;
-            padding: 15px;
+            padding: 14px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-top: 10px;
+            transition: transform .2s, box-shadow .2s;
+            margin-top: 6px;
         }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,.35); }
+        .btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+        .btn-green { background: linear-gradient(135deg, #28a745, #20893a); }
+        .btn-green:hover { box-shadow: 0 8px 20px rgba(40,167,69,.35); }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
+        /* ===== TRANG CHỦ ===== */
         .result-section {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            display: none;
+            margin-top: 24px; padding: 20px;
+            background: #f8f9fa; border-radius: 10px; display: none;
         }
-
-        .result-section.show {
-            display: block;
-            animation: slideIn 0.3s ease-out;
-        }
-
+        .result-section.show { display: block; animation: slideIn .3s ease-out; }
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
-
         .result-title {
-            color: #28a745;
-            font-weight: 600;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            color: #28a745; font-weight: 700; margin-bottom: 14px;
+            display: flex; align-items: center; gap: 8px; font-size: 15px;
         }
-
         .result-title::before {
-            content: "✓";
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            background: #28a745;
-            color: white;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 24px;
+            content: "✓"; display: inline-flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px; background: #28a745; color: white;
+            border-radius: 50%; font-size: 13px; flex-shrink: 0;
         }
-
         .link-item {
-            margin-bottom: 15px;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
+            margin-bottom: 12px; padding: 14px;
+            background: white; border-radius: 8px; border: 1px solid #e0e0e0;
         }
-
-        .link-label {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-
-        .link-container {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
+        .link-label { font-size: 11px; color: #666; margin-bottom: 6px; font-weight: 700; text-transform: uppercase; }
+        .link-container { display: flex; gap: 8px; align-items: center; }
         .link-url {
-            flex: 1;
-            padding: 10px;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            font-size: 13px;
-            word-break: break-all;
-            color: #495057;
+            flex: 1; padding: 9px; background: #f8f9fa;
+            border: 1px solid #dee2e6; border-radius: 6px;
+            font-size: 12px; word-break: break-all; color: #495057;
         }
-
         .copy-btn {
-            padding: 10px 20px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            white-space: nowrap;
-            transition: background 0.2s;
+            padding: 9px 16px; background: #28a745; color: white;
+            border: none; border-radius: 6px; cursor: pointer;
+            font-size: 12px; font-weight: 700; white-space: nowrap; transition: background .2s;
         }
-
-        .copy-btn:hover {
-            background: #218838;
-        }
-
-        .copy-btn.copied {
-            background: #6c757d;
-        }
+        .copy-btn:hover { background: #218838; }
+        .copy-btn.copied { background: #6c757d; }
 
         .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            border: 1px solid #f5c6cb;
-            display: none;
+            background: #f8d7da; color: #721c24; padding: 14px;
+            border-radius: 8px; margin-top: 16px; border: 1px solid #f5c6cb; display: none;
         }
-
-        .error-message.show {
-            display: block;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .loading.show {
-            display: block;
-        }
-
+        .error-message.show { display: block; animation: slideIn .3s ease-out; }
+        .loading { display: none; text-align: center; margin-top: 20px; }
+        .loading.show { display: block; }
         .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
+            border: 3px solid #f3f3f3; border-top: 3px solid #667eea;
+            border-radius: 50%; width: 38px; height: 38px;
+            animation: spin 1s linear infinite; margin: 0 auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== CONFIG STATUS BADGE ===== */
+        .config-status {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 14px; border-radius: 8px;
+            font-size: 13px; font-weight: 600; margin-bottom: 20px;
+        }
+        .config-status.ok  { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .config-status.warn{ background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+
+        /* ===== SETTINGS ===== */
+        .field { margin-bottom: 18px; }
+        .field label {
+            display: block; font-size: 13px; font-weight: 700;
+            color: #444; margin-bottom: 6px;
+        }
+        .field label span { font-weight: 400; color: #888; font-size: 12px; margin-left: 4px; }
+        .field input, .field textarea {
+            width: 100%; padding: 11px 13px;
+            border: 1.5px solid #dde; border-radius: 8px;
+            font-size: 13px; outline: none; transition: border-color .2s;
+            font-family: monospace;
+        }
+        .field input:focus, .field textarea:focus { border-color: #667eea; }
+        .field input.ok { border-color: #28a745; background: #f6fff9; }
+        .field textarea { resize: vertical; min-height: 70px; }
+
+        .paste-hint {
+            font-size: 11px; color: #aaa; margin-top: 5px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .save-alert {
+            padding: 10px 14px; border-radius: 8px; font-size: 13px;
+            font-weight: 600; text-align: center; display: none;
+            margin-top: 12px;
         }
+        .save-alert.show { display: block; animation: slideIn .3s; }
+        .save-alert.ok  { background: #d4edda; color: #155724; }
+        .save-alert.err { background: #f8d7da; color: #721c24; }
+
+        .divider { height: 1px; background: #eee; margin: 20px 0; }
+
+        .raw-paste-area textarea { font-size: 12px; color: #333; }
+
+        .badge-token {
+            display: inline-block; padding: 2px 8px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; margin-left: 6px;
+            background: #d4edda; color: #155724;
+        }
+        .badge-token.empty { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎯 Tạo Link Thanh Toán MoMo</h1>
-        
+<div class="container">
+
+    <!-- TABS -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('home')">🎯 Tạo Link</button>
+        <button class="tab-btn" onclick="switchTab('settings')" id="tabSettings">⚙️ Cài đặt</button>
+    </div>
+
+    <!-- ===== TAB: TRANG CHỦ ===== -->
+    <div class="tab-content active" id="tab-home">
+        <h2>🎯 Tạo Link Thanh Toán MoMo</h2>
+
+        <div class="config-status" id="configStatus">
+            <span id="configStatusIcon">⚠️</span>
+            <span id="configStatusText">Chưa cấu hình — vào tab Cài đặt để nhập token</span>
+        </div>
+
         <button class="btn" id="submitBtn" onclick="createPaymentLink()">
             Tạo Link Thanh Toán
         </button>
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p style="margin-top: 10px; color: #666;">Đang xử lý...</p>
+            <p style="margin-top:10px;color:#666">Đang xử lý...</p>
         </div>
 
         <div class="error-message" id="errorMessage"></div>
 
         <div class="result-section" id="resultSection">
             <div class="result-title">Link thanh toán đã được tạo thành công!</div>
-            
+
             <div class="link-item">
-                <div class="link-label">🔗 Link thanh toán MoMo (Rút gọn):</div>
+                <div class="link-label">🔗 Link rút gọn:</div>
                 <div class="link-container">
                     <div class="link-url" id="shortUrlDisplay"></div>
-                    <button class="copy-btn" onclick="copyToClipboard('shortUrl')">Copy</button>
+                    <button class="copy-btn" onclick="copyLink('shortUrl')">Copy</button>
                 </div>
             </div>
 
             <div class="link-item">
-                <div class="link-label">🌐 Link thanh toán gốc:</div>
+                <div class="link-label">🌐 Link gốc:</div>
                 <div class="link-container">
                     <div class="link-url" id="originalUrlDisplay"></div>
-                    <button class="copy-btn" onclick="copyToClipboard('originalUrl')">Copy</button>
+                    <button class="copy-btn" onclick="copyLink('originalUrl')">Copy</button>
                 </div>
             </div>
 
             <div class="link-item">
-                <div class="link-label">📱 Deeplink MoMo App:</div>
+                <div class="link-label">📱 Deeplink MoMo:</div>
                 <div class="link-container">
                     <div class="link-url" id="deeplinkDisplay"></div>
-                    <button class="copy-btn" onclick="copyToClipboard('deeplink')">Copy</button>
+                    <button class="copy-btn" onclick="copyLink('deeplink')">Copy</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        let currentLinks = {
-            shortUrl: '',
-            originalUrl: '',
-            deeplink: ''
-        };
+    <!-- ===== TAB: CÀI ĐẶT ===== -->
+    <div class="tab-content" id="tab-settings">
+        <h2>⚙️ Cài đặt Token</h2>
 
-        async function createPaymentLink() {
-            document.getElementById('resultSection').classList.remove('show');
-            document.getElementById('errorMessage').classList.remove('show');
-            document.getElementById('loading').classList.add('show');
-            document.getElementById('submitBtn').disabled = true;
+        <!-- Dán nhanh từ URL -->
+        <div class="raw-paste-area">
+            <div class="field">
+                <label>📋 Dán nhanh từ URL hoặc chuỗi tham số
+                    <span>(tùy chọn — hệ thống tự phân tích)</span>
+                </label>
+                <textarea id="rawPaste" rows="3"
+                    placeholder="Dán vào đây, VD:&#10;lang=vi&amp;token=92172319-2641-4030-a1f0-ca55ad437698-d2ViXzg0MzkyNzQ2MTUy&amp;isdn=0392746152&#10;hoặc URL đầy đủ từ apigami.viettel.vn/..."></textarea>
+                <div class="paste-hint">Dán xong nhấn nút bên dưới, hệ thống tự điền vào các ô.</div>
+            </div>
+            <button class="btn" style="margin-top:0;margin-bottom:16px" onclick="parsePaste()">
+                🔍 Phân tích &amp; Điền tự động
+            </button>
+        </div>
 
-            try {
-                // Gọi API qua Vercel serverless function (không cần amount)
-                const response = await fetch('/api/payment', {
-                    method: 'GET'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
+        <div class="divider"></div>
 
-                console.log('API Response:', data);
+        <!-- Điền thủ công -->
+        <div class="field">
+            <label>📱 Số điện thoại (isdn)
+                <span>— số 10 chữ số hoặc dạng 84xxx</span>
+            </label>
+            <input type="text" id="cfgIsdn" placeholder="VD: 84xxxxxxxx" />
+        </div>
 
-                if (data.errorCode && data.errorCode !== 0) {
-                    throw new Error(data.message || 'Có lỗi xảy ra khi tạo link thanh toán');
-                }
+        <div class="field">
+            <label>🔑 Token
+                <span id="tokenBadge" class="badge-token empty">Chưa có</span>
+            </label>
+            <input type="text" id="cfgToken"
+                placeholder="VD: 92172319-2641-4030-a1f0-ca55ad437698-d2ViXzg0MzkyNzQ2MTUy" />
+        </div>
 
-                // Lấy URL từ response
-                let urlProcess = '';
-                let deeplink = '';
-                
-                if (data.data && data.data.create_token_url) {
-                    // API createToken trả về create_token_url
-                    urlProcess = data.data.create_token_url;
-                    deeplink = data.data.deeplink || '';
-                } else if (data.data && data.data.urlProcess) {
-                    urlProcess = data.data.urlProcess;
-                    deeplink = data.data.deeplink || '';
-                } else if (data.urlProcess) {
-                    urlProcess = data.urlProcess;
-                    deeplink = data.deeplink || '';
-                } else if (data.url) {
-                    urlProcess = data.url;
-                    deeplink = data.deeplink || '';
-                } else {
-                    console.error('Response structure:', data);
-                    throw new Error('API không trả về link thanh toán. Kiểm tra console để xem chi tiết.');
-                }
+        <div class="field">
+            <label>🌐 Lang <span>(mặc định: vi)</span></label>
+            <input type="text" id="cfgLang" value="vi" placeholder="vi" />
+        </div>
 
-                // Rút gọn URL
-                const shortUrl = await shortenUrl(urlProcess);
+        <div class="field">
+            <label>💳 Pay Code <span>(mặc định: topup_web)</span></label>
+            <input type="text" id="cfgPayCode" value="topup_web" placeholder="topup_web" />
+        </div>
 
-                currentLinks = {
-                    shortUrl: shortUrl,
-                    originalUrl: urlProcess,
-                    deeplink: deeplink
-                };
+        <button class="btn btn-green" onclick="saveConfig()">💾 Lưu cấu hình</button>
+        <button class="btn" style="background:#eee;color:#555;margin-top:8px" onclick="clearConfig()">🗑️ Xóa cấu hình đã lưu</button>
 
-                document.getElementById('shortUrlDisplay').textContent = shortUrl;
-                document.getElementById('originalUrlDisplay').textContent = urlProcess;
-                document.getElementById('deeplinkDisplay').textContent = deeplink || 'Không có';
-                
-                document.getElementById('resultSection').classList.add('show');
+        <div class="save-alert" id="saveAlert"></div>
+    </div>
 
-            } catch (error) {
-                showError('Lỗi: ' + error.message);
-                console.error('Full error:', error);
-            } finally {
-                document.getElementById('loading').classList.remove('show');
-                document.getElementById('submitBtn').disabled = false;
-            }
+</div>
+
+<script>
+// ===================== CONFIG STORAGE =====================
+const STORAGE_KEY = 'viettel_cfg';
+
+function loadConfig() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
+    } catch { return null; }
+}
+function saveConfigToStorage(cfg) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+}
+
+// ===================== TABS =====================
+function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) => {
+        b.classList.toggle('active', ['home','settings'][i] === name);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'home') updateConfigStatus();
+    if (name === 'settings') loadSettingsForm();
+}
+
+// ===================== STATUS BADGE =====================
+function updateConfigStatus() {
+    const cfg = loadConfig();
+    const el  = document.getElementById('configStatus');
+    const icon = document.getElementById('configStatusIcon');
+    const txt  = document.getElementById('configStatusText');
+    if (cfg && cfg.isdn && cfg.token) {
+        el.className  = 'config-status ok';
+        icon.textContent = '✅';
+        txt.textContent  = `Đã cấu hình: ${cfg.isdn} — token sẵn sàng`;
+    } else {
+        el.className  = 'config-status warn';
+        icon.textContent = '⚠️';
+        txt.textContent  = 'Chưa cấu hình — vào tab Cài đặt để nhập token';
+    }
+}
+
+// ===================== SETTINGS FORM =====================
+function loadSettingsForm() {
+    const cfg = loadConfig();
+    if (!cfg) return;
+    if (cfg.isdn)     document.getElementById('cfgIsdn').value    = cfg.isdn;
+    if (cfg.token)    document.getElementById('cfgToken').value   = cfg.token;
+    if (cfg.lang)     document.getElementById('cfgLang').value    = cfg.lang;
+    if (cfg.pay_code) document.getElementById('cfgPayCode').value = cfg.pay_code;
+    updateTokenBadge(cfg.token);
+}
+
+function updateTokenBadge(token) {
+    const badge = document.getElementById('tokenBadge');
+    if (token && token.length > 8) {
+        badge.textContent = '✓ Đã có';
+        badge.className = 'badge-token';
+    } else {
+        badge.textContent = 'Chưa có';
+        badge.className = 'badge-token empty';
+    }
+}
+
+// Token field live update
+document.getElementById('cfgToken').addEventListener('input', function() {
+    updateTokenBadge(this.value.trim());
+});
+
+// ===================== PARSE PASTE =====================
+function parsePaste() {
+    const raw = document.getElementById('rawPaste').value.trim();
+    if (!raw) return showSaveAlert('Chưa có gì để phân tích!', 'err');
+
+    let paramStr = raw;
+
+    // Nếu là URL đầy đủ → lấy phần query
+    try {
+        const u = new URL(raw.includes('://') ? raw : 'https://x.com/?' + raw);
+        paramStr = u.search.replace(/^\?/, '') || raw;
+    } catch {}
+
+    // Parse params
+    const params = {};
+    paramStr.split('&').forEach(pair => {
+        const [k, ...v] = pair.split('=');
+        if (k) params[decodeURIComponent(k.trim())] = decodeURIComponent(v.join('=').trim());
+    });
+
+    let filled = 0;
+    if (params.isdn) {
+        // Chuẩn hóa: 84xxx → 0xxx
+        let isdn = params.isdn;
+        if (isdn.startsWith('84') && isdn.length >= 11) isdn = '0' + isdn.slice(2);
+        document.getElementById('cfgIsdn').value = isdn;
+        filled++;
+    }
+    if (params.token) {
+        document.getElementById('cfgToken').value = params.token;
+        updateTokenBadge(params.token);
+        filled++;
+    }
+    if (params.lang) document.getElementById('cfgLang').value = params.lang;
+
+    if (filled === 0) {
+        showSaveAlert('Không tìm thấy isdn hay token trong chuỗi này. Kiểm tra lại!', 'err');
+    } else {
+        showSaveAlert(`✅ Đã điền ${filled} trường. Kiểm tra rồi nhấn Lưu!`, 'ok');
+        document.getElementById('rawPaste').value = '';
+    }
+}
+
+// ===================== SAVE / CLEAR =====================
+function saveConfig() {
+    const isdn     = document.getElementById('cfgIsdn').value.trim();
+    const token    = document.getElementById('cfgToken').value.trim();
+    const lang     = document.getElementById('cfgLang').value.trim() || 'vi';
+    const pay_code = document.getElementById('cfgPayCode').value.trim() || 'topup_web';
+
+    if (!isdn || !token) {
+        return showSaveAlert('⚠️ Nhập đủ số điện thoại và token!', 'err');
+    }
+
+    saveConfigToStorage({ isdn, token, lang, pay_code });
+    updateTokenBadge(token);
+    showSaveAlert('✅ Đã lưu cấu hình thành công!', 'ok');
+
+    // Đánh dấu field xanh
+    ['cfgIsdn','cfgToken'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.add('ok');
+        setTimeout(() => el.classList.remove('ok'), 2000);
+    });
+}
+
+function clearConfig() {
+    if (!confirm('Xóa toàn bộ cấu hình đã lưu?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    ['cfgIsdn','cfgToken'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('cfgLang').value    = 'vi';
+    document.getElementById('cfgPayCode').value = 'topup_web';
+    document.getElementById('rawPaste').value   = '';
+    updateTokenBadge('');
+    showSaveAlert('🗑️ Đã xóa cấu hình.', 'ok');
+}
+
+function showSaveAlert(msg, type) {
+    const el = document.getElementById('saveAlert');
+    el.textContent = msg;
+    el.className = `save-alert show ${type}`;
+    setTimeout(() => el.className = 'save-alert', 3500);
+}
+
+// ===================== PAYMENT =====================
+let currentLinks = { shortUrl: '', originalUrl: '', deeplink: '' };
+
+async function createPaymentLink() {
+    document.getElementById('resultSection').classList.remove('show');
+    document.getElementById('errorMessage').classList.remove('show');
+    document.getElementById('loading').classList.add('show');
+    document.getElementById('submitBtn').disabled = true;
+
+    try {
+        // Lấy config từ localStorage nếu có
+        const cfg = loadConfig();
+
+        let apiUrl = '/api/payment';
+        let fetchOpts = { method: 'GET' };
+
+        if (cfg && cfg.isdn && cfg.token) {
+            // Gửi config theo body POST để ghi đè env vars
+            fetchOpts = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    isdn:     cfg.isdn,
+                    token:    cfg.token,
+                    lang:     cfg.lang     || 'vi',
+                    pay_code: cfg.pay_code || 'topup_web'
+                })
+            };
         }
 
-        async function shortenUrl(longUrl) {
-            try {
-                // Sử dụng API rút gọn link riêng
-                const response = await fetch('/api/shorten', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ url: longUrl })
-                });
-                
-                const data = await response.json();
-                
-                if (data.shortUrl) {
-                    return data.shortUrl;
-                } else {
-                    return longUrl;
-                }
-            } catch (error) {
-                console.error('Error shortening URL:', error);
-                return longUrl;
-            }
+        const response = await fetch(apiUrl, fetchOpts);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        console.log('API Response:', data);
+
+        if (data.errorCode && data.errorCode !== 0) {
+            throw new Error(data.message || 'Lỗi không xác định từ API');
         }
 
-        function copyToClipboard(linkType) {
-            const textToCopy = currentLinks[linkType];
-            
-            const textarea = document.createElement('textarea');
-            textarea.value = textToCopy;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            
-            try {
-                document.execCommand('copy');
-                
-                const buttons = document.querySelectorAll('.copy-btn');
-                buttons.forEach(btn => {
-                    if (btn.textContent === 'Copy' && btn.onclick.toString().includes(linkType)) {
-                        btn.textContent = 'Đã copy!';
-                        btn.classList.add('copied');
-                        setTimeout(() => {
-                            btn.textContent = 'Copy';
-                            btn.classList.remove('copied');
-                        }, 2000);
-                    }
-                });
-            } catch (err) {
-                showError('Không thể copy. Vui lòng copy thủ công.');
-            }
-            
-            document.body.removeChild(textarea);
+        // Trích xuất URL
+        let urlProcess = '', deeplink = '';
+        if (data.data?.create_token_url) {
+            urlProcess = data.data.create_token_url;
+            deeplink   = data.data.deeplink || '';
+        } else if (data.data?.urlProcess) {
+            urlProcess = data.data.urlProcess;
+            deeplink   = data.data.deeplink || '';
+        } else if (data.urlProcess) {
+            urlProcess = data.urlProcess;
+            deeplink   = data.deeplink || '';
+        } else if (data.url) {
+            urlProcess = data.url;
+            deeplink   = data.deeplink || '';
+        } else {
+            console.error('Response:', data);
+            throw new Error('API không trả về link. Xem console để debug.');
         }
 
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.classList.add('show');
-            
-            setTimeout(() => {
-                errorDiv.classList.remove('show');
-            }, 5000);
+        const shortUrl = await shortenUrl(urlProcess);
+
+        currentLinks = { shortUrl, originalUrl: urlProcess, deeplink };
+        document.getElementById('shortUrlDisplay').textContent   = shortUrl;
+        document.getElementById('originalUrlDisplay').textContent = urlProcess;
+        document.getElementById('deeplinkDisplay').textContent   = deeplink || 'Không có';
+        document.getElementById('resultSection').classList.add('show');
+
+    } catch (err) {
+        const errDiv = document.getElementById('errorMessage');
+        errDiv.textContent = 'Lỗi: ' + err.message;
+        errDiv.classList.add('show');
+        setTimeout(() => errDiv.classList.remove('show'), 6000);
+    } finally {
+        document.getElementById('loading').classList.remove('show');
+        document.getElementById('submitBtn').disabled = false;
+    }
+}
+
+async function shortenUrl(longUrl) {
+    try {
+        const r = await fetch('/api/shorten', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: longUrl })
+        });
+        const d = await r.json();
+        return d.shortUrl || longUrl;
+    } catch { return longUrl; }
+}
+
+function copyLink(type) {
+    const text = currentLinks[type];
+    if (!text) return;
+    navigator.clipboard.writeText(text).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    });
+    // Tìm nút copy đúng
+    const btns = document.querySelectorAll('.copy-btn');
+    btns.forEach(btn => {
+        if (btn.getAttribute('onclick') === `copyLink('${type}')`) {
+            btn.textContent = 'Đã copy!';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
         }
-    </script>
+    });
+}
+
+// ===================== INIT =====================
+updateConfigStatus();
+loadSettingsForm();
+</script>
 </body>
 </html>

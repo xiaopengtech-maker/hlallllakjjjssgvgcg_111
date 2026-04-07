@@ -10,21 +10,43 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  // === GET /api/payment?action=get_config ===
+  // Trả về config hiện tại (không trả token vì bảo mật)
+  if (req.method === 'GET' && req.query?.action === 'get_config') {
+    return res.status(200).json({
+      isdn: process.env.VIETTEL_ISDN || '',
+      lang: process.env.VIETTEL_LANG || 'vi',
+      pay_code: process.env.VIETTEL_PAY_CODE || 'topup_web',
+      has_token: !!(process.env.VIETTEL_TOKEN)
+    });
+  }
+
   if (req.method === 'POST' || req.method === 'GET') {
     try {
-      // Cấu hình mặc định
+      // Đọc body (POST) hoặc query (GET)
+      const body = req.method === 'POST' ? (req.body || {}) : (req.query || {});
+
+      // Cấu hình mặc định (fallback cuối cùng)
       const DEFAULT_CONFIG = {
-        isdn: '84346784490',
-        token: '579fb011-f2e5-42e0-bcc3-9dedaf6d599e-d2ViXzg0MzQ2Nzg0NDkw',
+        isdn: '84392746152',
+        token: '92172319-2641-4030-a1f0-ca55ad437698-d2ViXzg0MzkyNzQ2MTUy',
         lang: 'vi',
         pay_code: 'topup_web'
       };
-      
-      // POST vào API createToken (KHÔNG CẦN amount parameter)
-      const apiUrl = `https://apigami.viettel.vn/mvt-api/myviettel.php/momo/createToken?lang=${DEFAULT_CONFIG.lang}&pay_code=${DEFAULT_CONFIG.pay_code}&token=${DEFAULT_CONFIG.token}&isdn=${DEFAULT_CONFIG.isdn}`;
-      
-      console.log('Calling createToken API:', apiUrl);
-      
+
+      // Ưu tiên: Vercel Env Vars > Body/Query từ request > Default hardcode
+      const config = {
+        isdn:     process.env.VIETTEL_ISDN     || body.isdn     || DEFAULT_CONFIG.isdn,
+        token:    process.env.VIETTEL_TOKEN    || body.token    || DEFAULT_CONFIG.token,
+        lang:     process.env.VIETTEL_LANG     || body.lang     || DEFAULT_CONFIG.lang,
+        pay_code: process.env.VIETTEL_PAY_CODE || body.pay_code || DEFAULT_CONFIG.pay_code,
+      };
+
+      // POST vào API createToken
+      const apiUrl = `https://apigami.viettel.vn/mvt-api/myviettel.php/momo/createToken?lang=${config.lang}&pay_code=${config.pay_code}&token=${config.token}&isdn=${config.isdn}`;
+
+      console.log('Calling createToken API with isdn:', config.isdn);
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -32,24 +54,23 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json'
         }
       });
-      
+
       const data = await response.json();
-      
       console.log('API Response:', data);
-      
+
       return res.status(200).json(data);
-      
+
     } catch (error) {
       console.error('Error:', error);
-      return res.status(500).json({ 
-        errorCode: 1, 
-        message: 'Lỗi khi gọi API: ' + error.message 
+      return res.status(500).json({
+        errorCode: 1,
+        message: 'Lỗi khi gọi API: ' + error.message
       });
     }
   }
 
-  return res.status(405).json({ 
+  return res.status(405).json({
     errorCode: 1,
-    message: 'Method not allowed' 
+    message: 'Method not allowed'
   });
 }
