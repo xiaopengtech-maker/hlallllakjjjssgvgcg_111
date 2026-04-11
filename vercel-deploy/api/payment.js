@@ -28,7 +28,7 @@ export default async function handler(req, res) {
 
       // Cấu hình mặc định (fallback cuối cùng)
       const DEFAULT_CONFIG = {
-        isdn: '84346784490',
+        isdn: '84346784490999',
         token: '9f8f6294-10d1-4e56-8d4a-f639f77b99f4-d2ViXzg0MzQ2Nzg0NDkw',
         lang: 'vi',
         pay_code: 'topup_web'
