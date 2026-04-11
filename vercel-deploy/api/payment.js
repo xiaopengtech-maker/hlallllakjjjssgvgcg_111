@@ -1,5 +1,5 @@
 // Vercel Serverless Function - POST vào createToken API
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
@@ -13,12 +13,12 @@ export default async function handler(req, res) {
   if (req.method === 'POST' || req.method === 'GET') {
     try {
       // ===== ĐỔI TÀI KHOẢN: SỬA 2 DÒNG NÀY RỒI COMMIT =====
-      const CONFIG = {
-  isdn:     '866793764',
-  token:    '9a9ab762-95dd-43fc-a996-ef87af3727ed-d2ViXzg0ODY2NzkzNzY0',
-  lang:     'vi',
-  pay_code: 'topup_web'
-};
+      const config = {
+        isdn:     '84866793764',
+        token:    '9a9ab762-95dd-43fc-a996-ef87af3727ed-d2ViXzg0ODY2NzkzNzY0',
+        lang:     'vi',
+        pay_code: 'topup_web'
+      };
       // ========================================================
 
       // POST vào API createToken
