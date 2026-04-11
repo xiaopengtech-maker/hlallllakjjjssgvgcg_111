@@ -3,7 +3,7 @@
 
 // === URL file config.json trên GitHub của bạn ===
 const GITHUB_CONFIG_URL = process.env.GITHUB_CONFIG_URL
-  || 'https://raw.githubusercontent.com/yourname/yourrepo/main/config.json';
+  || 'https://raw.githubusercontent.com/xiaopengtech-maker/viettel-nnnananana/refs/heads/main/vercel-deploy/api/config.json';
 
 // Cache config trong RAM (tránh gọi GitHub quá nhiều)
 let cachedConfig = null;
