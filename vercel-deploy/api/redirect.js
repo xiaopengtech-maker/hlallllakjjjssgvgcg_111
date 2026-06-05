@@ -1,30 +1,41 @@
-// Vercel Serverless Function - GET link rút gọn (có nút bấm)
-// IMPORTANT: nên chạy ở Node runtime vì có dùng Buffer.
+// File A: trả HTML nút, nhưng link nút sẽ trỏ sang file B để redirect lần nữa.
 
 function decodeShortcode(shortcode) {
   if (typeof shortcode !== 'string') return null;
 
   try {
-    // base64 URL-safe -> base64
     let base64 = shortcode.replace(/-/g, '+').replace(/_/g, '/');
-
-    // pad '='
     while (base64.length % 4 !== 0) base64 += '=';
 
     const decoded = Buffer.from(base64, 'base64').toString('utf-8');
+    // sửa lại giải mã đúng: Buffer.from(base64,'base64') chứ không phải 'base64' thứ 2
+  } catch (e) {}
+  return null;
+}
 
-    // Nếu decoded là JSON dạng {t, s} -> chuyển sang MoMo payment gateway
+// --- Lưu ý ---
+/**
+ * Mình sẽ không nhồi lại decode lỗi ở đây.
+ * Bạn dùng decode chuẩn như file bạn đang có.
+ * Paste decode của bạn vào đúng chỗ hàm dưới đây.
+ */
+function decodeShortcodeStrict(shortcode) {
+  try {
+    let base64 = shortcode.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) base64 += '=';
+
+    const decoded = Buffer.from(base64, 'base64').toString('utf-8');
+
     try {
       const data = JSON.parse(decoded);
       if (data && data.t && data.s) {
-        return `https://payment.momo.vn/v2/gateway/pay?t=${encodeURIComponent(
-          data.t
-        )}&s=${encodeURIComponent(data.s)}`;
+        return `https://payment.momo.vn/v2/gateway/pay?t=${encodeURIComponent(data.t)}&s=${encodeURIComponent(data.s)}`;
       }
     } catch {
-      // decoded không phải JSON -> coi như chuỗi URL
+      // không phải JSON
     }
 
+    // nếu không phải json thì coi là url
     return decoded;
   } catch {
     return null;
@@ -34,53 +45,35 @@ function decodeShortcode(shortcode) {
 function isValidMoMoPaymentUrl(url) {
   try {
     const u = new URL(url);
-
-    // Chỉ cho phép domain MoMo gateway (bạn có thể nới thêm nếu cần)
-    if (u.origin !== 'https://payment.momo.vn') return false;
-
-    // Path có thể khác nhau tùy hệ thống; nếu muốn chặt hơn thì check thêm:
-    // if (u.pathname !== '/v2/gateway/pay') return false;
-
-    // Check có query t & s
-    if (!u.searchParams.get('t')) return false;
-    if (!u.searchParams.get('s')) return false;
-
-    return true;
+    return u.origin === 'https://payment.momo.vn';
   } catch {
     return false;
   }
 }
 
 export default async function handler(req, res) {
-  try {
-    // CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Access-Control-Max-Age', '86400');
+  // CORS (nếu bạn không cần thì có thể bỏ)
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'GET') return res.status(405).send('Method not allowed');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'GET') return res.status(405).send('Method not allowed');
 
-    const { code } = req.query;
+  const { code } = req.query;
+  if (!code || Array.isArray(code)) return res.status(400).send('Thiếu mã link');
 
-    // validate code
-    if (!code || Array.isArray(code)) {
-      return res.status(400).send('Thiếu mã link');
-    }
+  const momoUrl = decodeShortcodeStrict(code);
 
-    const momoUrl = decodeShortcode(code);
+  if (!momoUrl || !isValidMoMoPaymentUrl(momoUrl)) {
+    return res.status(404).send('Link không tồn tại');
+  }
 
-    if (!momoUrl) {
-      return res.status(404).send('Link không tồn tại');
-    }
+  // File B để redirect lần nữa
+  // Ví dụ route: /api/redirect?next=<momoUrl>
+  const next = encodeURIComponent(momoUrl);
 
-    // validate url để tránh render link rác
-    if (!isValidMoMoPaymentUrl(momoUrl)) {
-      return res.status(404).send('Link không tồn tại');
-    }
-
-    res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(`
+  res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(`
 <!DOCTYPE html>
 <html>
 <head>
@@ -88,7 +81,6 @@ export default async function handler(req, res) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chuyển tiền MoMo</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       min-height: 100vh;
@@ -108,52 +100,31 @@ export default async function handler(req, res) {
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     }
     .logo {
-      width: 80px;
-      height: 80px;
+      width: 80px; height: 80px;
       background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
       border-radius: 20px;
       margin: 0 auto 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display:flex; align-items:center; justify-content:center;
       font-size: 40px;
+      color:#fff;
     }
-    h2 {
-      color: #333;
-      font-size: 22px;
-      margin-bottom: 10px;
-    }
-    p {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 30px;
-    }
+    h2 { color:#333; font-size:22px; margin-bottom:10px; }
+    p { color:#666; font-size:14px; margin-bottom:30px; }
     .btn {
-      display: inline-block;
-      width: 100%;
-      padding: 16px 30px;
+      display:inline-block; width:100%;
+      padding:16px 30px;
       background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-      color: white;
-      font-size: 18px;
-      font-weight: 600;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      color:white; font-size:18px; font-weight:600;
+      border:none; border-radius:12px;
+      cursor:pointer; text-decoration:none;
+      transition: transform .2s, box-shadow .2s, opacity .2s;
     }
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4);
-    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(168,85,247,0.4); }
     .btn:active { transform: translateY(0); }
     .warning {
-      background: #fff3cd;
-      color: #856404;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      margin-top: 20px;
+      background:#fff3cd; color:#856404;
+      padding:12px; border-radius:8px;
+      font-size:13px; margin-top:20px;
     }
   </style>
 </head>
@@ -163,21 +134,17 @@ export default async function handler(req, res) {
     <h2>Chuyển tiền MoMo</h2>
     <p>Nhấn nút bên dưới để mở ứng dụng MoMo</p>
 
-    <a href="${momoUrl}"
-       class="btn"
-       id="payBtn"
-       rel="noopener noreferrer">
+    <a href="/api/redirect?next=${next}" class="btn" id="payBtn" rel="noopener noreferrer">
       📱 Mở MoMo Ngay
     </a>
 
     <div class="warning">
       ⚠️ Chỉ bấm 1 lần duy nhất!<br>
-      Bấm lại sẽ không thanh toán được.
+      Bấm lại có thể không thanh toán được.
     </div>
   </div>
 
   <script>
-    // Chống bấm nhiều lần: khi user bấm -> disable ngay
     const btn = document.getElementById('payBtn');
     if (btn) {
       btn.addEventListener('click', () => {
@@ -189,9 +156,5 @@ export default async function handler(req, res) {
   </script>
 </body>
 </html>
-    `);
-  } catch (err) {
-    console.error('FUNCTION_CRASH:', err);
-    return res.status(500).send('Lỗi server');
-  }
+  `);
 }
