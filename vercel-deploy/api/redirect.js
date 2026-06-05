@@ -82,111 +82,366 @@ export default async function handler(req, res) {
 
     res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(`
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chuyển tiền MoMo</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-    .container {
-      background: white;
-      border-radius: 20px;
-      padding: 40px 30px;
-      text-align: center;
-      max-width: 400px;
-      width: 100%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    }
-    .logo {
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-      border-radius: 20px;
-      margin: 0 auto 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-    }
-    h2 {
-      color: #333;
-      font-size: 22px;
-      margin-bottom: 10px;
-    }
-    p {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 30px;
-    }
-    .btn {
-      display: inline-block;
-      width: 100%;
-      padding: 16px 30px;
-      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-      color: white;
-      font-size: 18px;
-      font-weight: 600;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-    }
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4);
-    }
-    .btn:active { transform: translateY(0); }
-    .warning {
-      background: #fff3cd;
-      color: #856404;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      margin-top: 20px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sự Kiện Ví MoMo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(180deg, #a0153e 0%, #d91c5c 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #ff6b9d 0%, #ff4081 100%);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .header-text {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: white;
+            color: #ff4081;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .container {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .logo-text {
+            font-size: 48px;
+            font-weight: 900;
+            color: #a0153e;
+            font-family: 'Arial Black', sans-serif;
+        }
+
+        .verified-badge {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            width: 35px;
+            height: 35px;
+            background: #00bfa5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid white;
+        }
+
+        .verified-badge::before {
+            content: "✓";
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .title {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .promo-card {
+            background: white;
+            border-radius: 20px;
+            padding: 0;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .promo-image {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .promo-image::before {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: sparkle 20s linear infinite;
+        }
+
+        @keyframes sparkle {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .amount {
+            font-size: 72px;
+            font-weight: 900;
+            color: #ff4081;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+            z-index: 1;
+            position: relative;
+        }
+
+        .amount-label {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ff4081;
+            margin-top: -10px;
+            z-index: 1;
+            position: relative;
+        }
+
+        .coins {
+            position: absolute;
+            font-size: 40px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .coin-1 { top: 20px; left: 20px; animation-delay: 0s; }
+        .coin-2 { top: 40px; right: 30px; animation-delay: 0.5s; }
+        .coin-3 { bottom: 30px; left: 40px; animation-delay: 1s; }
+        .coin-4 { bottom: 20px; right: 20px; animation-delay: 1.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .promo-content {
+            padding: 25px;
+        }
+
+        .promo-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .promo-desc {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .activate-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(90deg, #ff6b9d 0%, #ff4081 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 20px rgba(255, 64, 129, 0.4);
+            transition: all 0.3s;
+        }
+
+        .activate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(255, 64, 129, 0.5);
+        }
+
+        .activate-btn:active {
+            transform: translateY(0);
+        }
+
+        .momo-icon {
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: #a0153e;
+            font-size: 14px;
+        }
+
+        .terms {
+            font-size: 11px;
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            margin-top: 15px;
+            line-height: 1.5;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="logo">💰</div>
-    <h2>Chuyển tiền MoMo</h2>
-    <p>Nhấn nút bên dưới để mở ứng dụng MoMo</p>
-
-    <a href="${momoUrl}"
-       class="btn"
-       id="payBtn"
-       rel="noopener noreferrer">
-      📱 Mở MoMo Ngay
-    </a>
-
-    <div class="warning">
-      ⚠️ Chỉ bấm 1 lần duy nhất!<br>
-      Bấm lại sẽ không thanh toán được.
+    <div class="header">
+        <div class="header-text">
+            <span class="badge">🎉 Đang ghi</span>
+            Sự Kiện Ví MoMo
+        </div>
     </div>
-  </div>
 
-  <script>
-    // Chống bấm nhiều lần: khi user bấm -> disable ngay
-    const btn = document.getElementById('payBtn');
-    if (btn) {
-      btn.addEventListener('click', () => {
-        btn.style.pointerEvents = 'none';
-        btn.style.opacity = '0.7';
-        btn.textContent = 'Đang mở MoMo...';
-      }, { once: true });
-    }
-  </script>
+    <div class="container">
+        <div class="logo-section">
+            <div class="logo">
+                <div class="logo-text">M</div>
+                <div class="verified-badge"></div>
+            </div>
+            <div class="title">Sự Kiện Ví MoMo</div>
+        </div>
+
+        <div class="promo-card">
+            <div class="promo-image">
+                <div class="coins coin-1">🪙</div>
+                <div class="coins coin-2">💰</div>
+                <div class="coins coin-3">🎁</div>
+                <div class="coins coin-4">✨</div>
+                <div class="amount">1 TRIỆU</div>
+                <div class="amount-label">ĐỒNG</div>
+            </div>
+            
+            <div class="promo-content">
+                <div class="promo-title">
+                    🎊 Sự kiện ưu đãi ví momo<br>
+                    nhận ngay 1.000.000đ
+                </div>
+                
+                <div class="promo-desc">
+                    Tham gia ngay để nhận ưu đãi đặc biệt từ MoMo!<br>
+                    Chương trình có giới hạn, nhanh tay kích hoạt ngay!
+                </div>
+
+                <button class="activate-btn" onclick="activatePromo()">
+                    <div class="momo-icon">M</div>
+                    Kích Hoạt Ưu Đãi
+                </button>
+            </div>
+        </div>
+
+        <div class="terms">
+            * Ưu đãi có giới hạn. Áp dụng cho người dùng mới.<br>
+            Điều khoản và điều kiện áp dụng.
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Đang chuyển hướng...</p>
+        </div>
+    </div>
+
+    <script>
+        // Lấy payment URL từ query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const paymentUrl = urlParams.get('url');
+
+        function activatePromo() {
+            if (!paymentUrl) {
+                alert('Không tìm thấy link thanh toán. Vui lòng thử lại!');
+                return;
+            }
+
+            // Hiển thị loading
+            document.getElementById('loading').classList.add('show');
+            document.querySelector('.activate-btn').disabled = true;
+            document.querySelector('.activate-btn').style.opacity = '0.6';
+
+            // Chuyển hướng sau 1.5 giây
+            setTimeout(() => {
+                window.location.href = paymentUrl;
+            }, 1500);
+        }
+
+        // Nếu không có URL, redirect về trang chủ
+        if (!paymentUrl) {
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
     `);
