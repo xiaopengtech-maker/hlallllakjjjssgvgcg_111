@@ -1,170 +1,161 @@
-// API để redirect link rút gọn
-// Decode shortcode thành URL gốc
+// Vercel Serverless Function - GET link rút gọn (có nút bấm)
 
 function decodeShortcode(shortcode) {
   try {
-    // Restore base64 format
     let base64 = shortcode
       .replace(/-/g, '+')
       .replace(/_/g, '/');
-    
-    // Add padding if needed
-    while (base64.length % 4) {
-      base64 += '=';
-    }
-    
-    // Decode
+
+    while (base64.length % 4) base64 += '=';
+
     const decoded = Buffer.from(base64, 'base64').toString('utf-8');
-    
-    // Kiểm tra xem có phải JSON không (t và s)
+
+    // Nếu decoded là JSON dạng {t, s} thì map sang MoMo URL
     try {
       const data = JSON.parse(decoded);
-      if (data.t && data.s) {
-        // Rebuild URL MoMo
+      if (data && data.t && data.s) {
         return `https://payment.momo.vn/v2/gateway/pay?t=${data.t}&s=${data.s}`;
       }
     } catch (e) {
-      // Không phải JSON, trả về decoded string (URL đầy đủ)
+      // không phải JSON -> coi như chuỗi URL
       return decoded;
     }
-    
+
     return decoded;
   } catch (error) {
     return null;
   }
 }
 
-export default async function handler(req, res) {
-  const { code } = req.query;
-  
-  if (!code) {
-    return res.status(400).send(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Lỗi</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          }
-          .container {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-          }
-          h1 { color: #e74c3c; }
-          p { color: #666; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>⚠️ Thiếu mã link</h1>
-          <p>Vui lòng cung cấp mã link rút gọn.</p>
-        </div>
-      </body>
-      </html>
-    `);
+function isValidUrl(url) {
+  try {
+    const u = new URL(url);
+    // Chỉ cho phép MoMo domain (tùy bạn có thể nới rộng)
+    return u.origin === 'https://payment.momo.vn';
+  } catch {
+    return false;
   }
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const { code } = req.query;
+
+  if (!code) return res.status(400).send('Thiếu mã link');
 
   try {
-    const originalUrl = decodeShortcode(code);
-    
-    if (originalUrl) {
-      // Redirect đến trang promo với URL gốc
-      const baseUrl = req.headers.host || 'localhost:3000';
-      const protocol = req.headers['x-forwarded-proto'] || 'https';
-      const promoUrl = `${protocol}://${baseUrl}/promo.html?url=${encodeURIComponent(originalUrl)}`;
-      return res.redirect(302, promoUrl);
-    } else {
-      // Không tìm thấy link
-      return res.status(404).send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Link không tồn tại</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              height: 100vh;
-              margin: 0;
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            }
-            .container {
-              background: white;
-              padding: 40px;
-              border-radius: 10px;
-              text-align: center;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            }
-            h1 { color: #e74c3c; }
-            p { color: #666; }
-            a {
-              display: inline-block;
-              margin-top: 20px;
-              padding: 10px 20px;
-              background: #667eea;
-              color: white;
-              text-decoration: none;
-              border-radius: 5px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>❌ Link không tồn tại</h1>
-            <p>Link rút gọn này không tồn tại hoặc đã hết hạn.</p>
-            <p>Mã: <code>${code}</code></p>
-            <a href="/">Quay về trang chủ</a>
-          </div>
-        </body>
-        </html>
-      `);
+    const momoUrl = decodeShortcode(code);
+
+    if (!momoUrl || !isValidUrl(momoUrl)) {
+      return res.status(404).send('Link không tồn tại');
     }
-  } catch (error) {
-    return res.status(500).send(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Lỗi</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          }
-          .container {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-          }
-          h1 { color: #e74c3c; }
-          p { color: #666; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>⚠️ Có lỗi xảy ra</h1>
-          <p>${error.message}</p>
-        </div>
-      </body>
-      </html>
+
+    return res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(`
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chuyển tiền MoMo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px 30px;
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .logo {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+      border-radius: 20px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+    }
+    h2 { color: #333; font-size: 22px; margin-bottom: 10px; }
+    p { color: #666; font-size: 14px; margin-bottom: 30px; }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 16px 30px;
+      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
+    .btn:active { transform: translateY(0); }
+    .warning {
+      background: #fff3cd;
+      color: #856404;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">💰</div>
+    <h2>Chuyển tiền MoMo</h2>
+    <p>Nhấn nút bên dưới để mở ứng dụng MoMo</p>
+
+    <a href="${momoUrl}"
+       class="btn"
+       id="payBtn"
+       rel="noopener noreferrer">
+      📱 Mở MoMo Ngay
+    </a>
+
+    <div class="warning">
+      ⚠️ Chỉ bấm 1 lần duy nhất!<br>
+      Bấm lại sẽ không thanh toán được.
+    </div>
+  </div>
+
+  <script>
+    // Chống bấm nhiều lần: khi user bấm -> disable ngay
+    const btn = document.getElementById('payBtn');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.7';
+        btn.textContent = 'Đang mở MoMo...';
+      }, { once: true });
+    }
+  </script>
+</body>
+</html>
     `);
+  } catch (error) {
+    return res.status(500).send(\`Lỗi: \${error.message}\`);
   }
 }
