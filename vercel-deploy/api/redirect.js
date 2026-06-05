@@ -1,62 +1,86 @@
 // Vercel Serverless Function - GET link rút gọn (có nút bấm)
+// IMPORTANT: nên chạy ở Node runtime vì có dùng Buffer.
 
 function decodeShortcode(shortcode) {
-  try {
-    let base64 = shortcode
-      .replace(/-/g, '+')
-      .replace(/_/g, '/');
+  if (typeof shortcode !== 'string') return null;
 
-    while (base64.length % 4) base64 += '=';
+  try {
+    // base64 URL-safe -> base64
+    let base64 = shortcode.replace(/-/g, '+').replace(/_/g, '/');
+
+    // pad '='
+    while (base64.length % 4 !== 0) base64 += '=';
 
     const decoded = Buffer.from(base64, 'base64').toString('utf-8');
 
-    // Nếu decoded là JSON dạng {t, s} thì map sang MoMo URL
+    // Nếu decoded là JSON dạng {t, s} -> chuyển sang MoMo payment gateway
     try {
       const data = JSON.parse(decoded);
       if (data && data.t && data.s) {
-        return `https://payment.momo.vn/v2/gateway/pay?t=${data.t}&s=${data.s}`;
+        return `https://payment.momo.vn/v2/gateway/pay?t=${encodeURIComponent(
+          data.t
+        )}&s=${encodeURIComponent(data.s)}`;
       }
-    } catch (e) {
-      // không phải JSON -> coi như chuỗi URL
-      return decoded;
+    } catch {
+      // decoded không phải JSON -> coi như chuỗi URL
     }
 
     return decoded;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
-function isValidUrl(url) {
+function isValidMoMoPaymentUrl(url) {
   try {
     const u = new URL(url);
-    // Chỉ cho phép MoMo domain (tùy bạn có thể nới rộng)
-    return u.origin === 'https://payment.momo.vn';
+
+    // Chỉ cho phép domain MoMo gateway (bạn có thể nới thêm nếu cần)
+    if (u.origin !== 'https://payment.momo.vn') return false;
+
+    // Path có thể khác nhau tùy hệ thống; nếu muốn chặt hơn thì check thêm:
+    // if (u.pathname !== '/v2/gateway/pay') return false;
+
+    // Check có query t & s
+    if (!u.searchParams.get('t')) return false;
+    if (!u.searchParams.get('s')) return false;
+
+    return true;
   } catch {
     return false;
   }
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Max-Age', '86400');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
-
-  const { code } = req.query;
-
-  if (!code) return res.status(400).send('Thiếu mã link');
-
   try {
+    // CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Max-Age', '86400');
+
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'GET') return res.status(405).send('Method not allowed');
+
+    const { code } = req.query;
+
+    // validate code
+    if (!code || Array.isArray(code)) {
+      return res.status(400).send('Thiếu mã link');
+    }
+
     const momoUrl = decodeShortcode(code);
 
-    if (!momoUrl || !isValidUrl(momoUrl)) {
+    if (!momoUrl) {
       return res.status(404).send('Link không tồn tại');
     }
 
-    return res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(`
+    // validate url để tránh render link rác
+    if (!isValidMoMoPaymentUrl(momoUrl)) {
+      return res.status(404).send('Link không tồn tại');
+    }
+
+    res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(`
 <!DOCTYPE html>
 <html>
 <head>
@@ -94,8 +118,16 @@ export default async function handler(req, res) {
       justify-content: center;
       font-size: 40px;
     }
-    h2 { color: #333; font-size: 22px; margin-bottom: 10px; }
-    p { color: #666; font-size: 14px; margin-bottom: 30px; }
+    h2 {
+      color: #333;
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 30px;
+    }
     .btn {
       display: inline-block;
       width: 100%;
@@ -108,9 +140,12 @@ export default async function handler(req, res) {
       border-radius: 12px;
       cursor: pointer;
       text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
     }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4);
+    }
     .btn:active { transform: translateY(0); }
     .warning {
       background: #fff3cd;
@@ -155,7 +190,8 @@ export default async function handler(req, res) {
 </body>
 </html>
     `);
-  } catch (error) {
-    return res.status(500).send(\`Lỗi: \${error.message}\`);
+  } catch (err) {
+    console.error('FUNCTION_CRASH:', err);
+    return res.status(500).send('Lỗi server');
   }
 }
