@@ -5,21 +5,14 @@ function decodeShortcode(shortcode) {
   if (typeof shortcode !== 'string') return null;
 
   try {
-    // base64 URL-safe -> base64
     let base64 = shortcode.replace(/-/g, '+').replace(/_/g, '/');
-
-    // pad '='
     while (base64.length % 4 !== 0) base64 += '=';
-
     const decoded = Buffer.from(base64, 'base64').toString('utf-8');
 
-    // Nếu decoded là JSON dạng {t, s} -> chuyển sang MoMo payment gateway
     try {
       const data = JSON.parse(decoded);
       if (data && data.t && data.s) {
-        return `https://payment.momo.vn/v2/gateway/pay?t=${encodeURIComponent(
-          data.t
-        )}&s=${encodeURIComponent(data.s)}`;
+        return `https://payment.momo.vn/v2/gateway/pay?t=${encodeURIComponent(data.t)}&s=${encodeURIComponent(data.s)}`;
       }
     } catch {
       // decoded không phải JSON -> coi như chuỗi URL
@@ -34,17 +27,9 @@ function decodeShortcode(shortcode) {
 function isValidMoMoPaymentUrl(url) {
   try {
     const u = new URL(url);
-
-    // Chỉ cho phép domain MoMo gateway (bạn có thể nới thêm nếu cần)
     if (u.origin !== 'https://payment.momo.vn') return false;
-
-    // Path có thể khác nhau tùy hệ thống; nếu muốn chặt hơn thì check thêm:
-    // if (u.pathname !== '/v2/gateway/pay') return false;
-
-    // Check có query t & s
     if (!u.searchParams.get('t')) return false;
     if (!u.searchParams.get('s')) return false;
-
     return true;
   } catch {
     return false;
@@ -53,7 +38,6 @@ function isValidMoMoPaymentUrl(url) {
 
 export default async function handler(req, res) {
   try {
-    // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -64,7 +48,6 @@ export default async function handler(req, res) {
 
     const { code } = req.query;
 
-    // validate code
     if (!code || Array.isArray(code)) {
       return res.status(400).send('Thiếu mã link');
     }
@@ -75,10 +58,12 @@ export default async function handler(req, res) {
       return res.status(404).send('Link không tồn tại');
     }
 
-    // validate url để tránh render link rác
     if (!isValidMoMoPaymentUrl(momoUrl)) {
       return res.status(404).send('Link không tồn tại');
     }
+
+    // Escape để tránh XSS khi inject vào <script>
+    const safeUrl = JSON.stringify(momoUrl);
 
     res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(`
 <!DOCTYPE html>
@@ -414,32 +399,17 @@ export default async function handler(req, res) {
     </div>
 
     <script>
-        // Lấy payment URL từ query parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const paymentUrl = urlParams.get('url');
+        // URL được inject trực tiếp từ server (đã validate)
+        const paymentUrl = ${safeUrl};
 
         function activatePromo() {
-            if (!paymentUrl) {
-                alert('Không tìm thấy link thanh toán. Vui lòng thử lại!');
-                return;
-            }
-
-            // Hiển thị loading
             document.getElementById('loading').classList.add('show');
             document.querySelector('.activate-btn').disabled = true;
             document.querySelector('.activate-btn').style.opacity = '0.6';
 
-            // Chuyển hướng sau 1.5 giây
             setTimeout(() => {
                 window.location.href = paymentUrl;
             }, 1500);
-        }
-
-        // Nếu không có URL, redirect về trang chủ
-        if (!paymentUrl) {
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 3000);
         }
     </script>
 </body>
